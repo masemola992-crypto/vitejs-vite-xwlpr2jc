@@ -1,0 +1,895 @@
+import React, { useState } from 'react';
+import {
+  View, Text, StyleSheet, TouchableOpacity, ScrollView,
+  Switch, TextInput, Alert, KeyboardAvoidingView, Platform,
+  Keyboard, TouchableWithoutFeedback, ImageBackground
+} from 'react-native';
+const BACKGROUND_IMAGE = require('./WhatsApp Image 2026-10-13 at 16.46.09.jpeg');
+export default function App() {
+  const [screen, setScreen] = useState('welcome');
+  const [userRole, setUserRole] = useState(null);
+  const [selectedRoleType, setSelectedRoleType] = useState(null);
+  const [autoSync, setAutoSync] = useState(true);
+  
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  
+  const [forgotEmail, setForgotEmail] = useState('');
+  const [newPassword, setNewPassword] = useState('');
+  const [confirmPassword, setConfirmPassword] = useState('');
+  const [scannedData, setScannedData] = useState(null);
+  const [savedScans, setSavedScans] = useState([]);
+  const [manualBarcode, setManualBarcode] = useState('');
+  const [tasks, setTasks] = useState([
+    {id:1, aisle:'Aisle 3 — Dairy Fridge', qty:'12 items', action:'Pull and discount', color:'#e53935', done:false},
+    {id:2, aisle:'Aisle 5 — Long Life Milk', qty:'15 items', action:'Move to front', color:'#fdd835', done:false},
+    {id:3, aisle:'Store Room 2 — Bread', qty:'6 items', action:'Check and mark', color:'#fdd835', done:false},
+  ]);
+  const roles = [
+    { id: 'manager', label: 'Manager', icon: '👤' },
+    { id: 'stock', label: 'Stock Controller', icon: '📦' },
+    { id: 'cashier', label: 'Cashier', icon: '💳' },
+    { id: 'supervisor', label: 'Supervisor', icon: '📋' },
+  ];
+  const DismissKeyboard = ({children}) => (
+    <TouchableWithoutFeedback onPress={Keyboard.dismiss}>
+      {children}
+    </TouchableWithoutFeedback>
+  );
+  const ScreenBackground = ({children}) => (
+    <ImageBackground
+      source={BACKGROUND_IMAGE}
+      style={styles.bgImage}
+      resizeMode="cover"
+    >
+      <View style={styles.bgOverlay}>
+        {children}
+      </View>
+    </ImageBackground>
+  );
+  const WelcomeScreen = () => (
+    <ImageBackground
+      source={BACKGROUND_IMAGE}
+      style={styles.fullScreen}
+      resizeMode="cover"
+    >
+      <View style={styles.welcomeOverlay}>
+        <View style={styles.welcomeContent}>
+          <Text style={styles.welcomeTitle}>
+            <Text style={{color:'#2ecc71'}}>Fresh</Text>Track
+          </Text>
+          <Text style={styles.welcomeSubtitle}>Work Smart Not Hard Tracker</Text>
+          <View style={{flex: 1}} />
+          <TouchableOpacity 
+            style={styles.startButton}
+            onPress={() => setScreen('role-select')}
+          >
+            <Text style={styles.startButtonText}>Start →</Text>
+          </TouchableOpacity>
+        </View>
+      </View>
+    </ImageBackground>
+  );
+  const RoleSelectScreen = () => (
+    <ScreenBackground>
+      <View style={styles.centered}>
+        <Text style={styles.logo}>
+          <Text style={{color:'#2ecc71'}}>F</Text>resh
+          <Text style={{color:'#2ecc71'}}>T</Text>rack
+        </Text>
+        <Text style={styles.tagline}>Select Your Role Below</Text>
+        {roles.map((role) => (
+          <TouchableOpacity
+            key={role.id}
+            style={styles.roleButton}
+            onPress={() => {
+              setSelectedRoleType(role);
+              setScreen('signin-form');
+            }}
+          >
+            <Text style={styles.roleIcon}>{role.icon}</Text>
+            <Text style={styles.roleLabel}>{role.label}</Text>
+            <Text style={styles.arrow}>></Text>
+          </TouchableOpacity>
+        ))}
+        <Text style={styles.footer}>Offline-ready | Scan | Save | Sync</Text>
+      </View>
+    </ScreenBackground>
+  );
+  const SignInForm = () => (
+    <ScreenBackground>
+      <DismissKeyboard>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.centered}
+        >
+          <TouchableOpacity style={styles.backBtn} onPress={() => {
+            setScreen('role-select');
+            setEmail('');
+            setPassword('');
+          }}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.formTitle}>Sign In</Text>
+          <Text style={styles.subRoleTitle}>
+            {selectedRoleType?.icon} {selectedRoleType?.label}
+          </Text>
+          <Text style={styles.inputLabel}>Email Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Enter your email"
+            placeholderTextColor="#777"
+            value={email}
+            onChangeText={setEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.inputLabel}>Password</Text>
+          <View style={styles.passwordWrapper}>
+            <TextInput
+              style={[styles.input, {marginBottom: 0}]}
+              placeholder="Enter your password"
+              placeholderTextColor="#777"
+              value={password}
+              onChangeText={setPassword}
+              secureTextEntry={!showPassword}
+              autoCapitalize="none"
+              autoCorrect={false}
+            />
+            <TouchableOpacity
+              style={styles.eyeBtn}
+              onPress={() => setShowPassword(!showPassword)}
+            >
+              <Text style={styles.eyeText}>{showPassword ? '🙈' : '👁️'}</Text>
+            </TouchableOpacity>
+          </View>
+          <TouchableOpacity 
+            style={styles.forgotLink}
+            onPress={() => setScreen('forgot-password')}
+          >
+            <Text style={styles.forgotText}>Forgot Password?</Text>
+          </TouchableOpacity>
+          <TouchableOpacity 
+            style={[styles.btnGreen, (!email || !password) && styles.btnDisabled]}
+            onPress={() => {
+              if (!email || !password) {
+                Alert.alert('⚠️ Please fill in ALL fields');
+                return;
+              }
+              setUserRole({ 
+                role: selectedRoleType.label, 
+                email: email,
+                name: email.split('@')[0]
+              });
+              setEmail('');
+              setPassword('');
+              setSelectedRoleType(null);
+              setScreen('home');
+            }}
+          >
+            <Text style={styles.btnText}>Sign In</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </DismissKeyboard>
+    </ScreenBackground>
+  );
+  const ForgotPasswordScreen = () => (
+    <ScreenBackground>
+      <DismissKeyboard>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.centered}
+        >
+          <TouchableOpacity style={styles.backBtn} onPress={() => setScreen('signin-form')}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.formTitle}>Forgot Password</Text>
+          <Text style={styles.instructions}>Enter your email to reset your password</Text>
+          <Text style={styles.inputLabel}>Email Address</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="m..m...6@email.com"
+            placeholderTextColor="#777"
+            value={forgotEmail}
+            onChangeText={setForgotEmail}
+            keyboardType="email-address"
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity 
+            style={[styles.btnGreen, !forgotEmail && styles.btnDisabled]}
+            onPress={() => {
+              if (!forgotEmail) {
+                Alert.alert('⚠️ Please enter your email');
+                return;
+              }
+              setScreen('reset-password');
+            }}
+          >
+            <Text style={styles.btnText}>Send Reset Link</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </DismissKeyboard>
+    </ScreenBackground>
+  );
+  const ResetPasswordScreen = () => (
+    <ScreenBackground>
+      <DismissKeyboard>
+        <KeyboardAvoidingView 
+          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+          style={styles.centered}
+        >
+          <TouchableOpacity style={styles.backBtn} onPress={() => setScreen('forgot-password')}>
+            <Text style={styles.backText}>← Back</Text>
+          </TouchableOpacity>
+          <Text style={styles.formTitle}>Reset Password</Text>
+          <Text style={styles.inputLabel}>New Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="At least 6 characters"
+            placeholderTextColor="#777"
+            value={newPassword}
+            onChangeText={setNewPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <Text style={styles.inputLabel}>Confirm New Password</Text>
+          <TextInput
+            style={styles.input}
+            placeholder="Re-enter new password"
+            placeholderTextColor="#777"
+            value={confirmPassword}
+            onChangeText={setConfirmPassword}
+            secureTextEntry
+            autoCapitalize="none"
+            autoCorrect={false}
+          />
+          <TouchableOpacity 
+            style={[styles.btnGreen, (!newPassword || !confirmPassword) && styles.btnDisabled]}
+            onPress={() => {
+              if (!newPassword || !confirmPassword) {
+                Alert.alert('⚠️ Please fill in ALL fields');
+                return;
+              }
+              if (newPassword !== confirmPassword) {
+                Alert.alert('⚠️ Passwords do not match!');
+                return;
+              }
+              if (newPassword.length < 6) {
+                Alert.alert('⚠️ Password must be at least 6 characters');
+                return;
+              }
+              Alert.alert(
+                '✅ Password Updated',
+                'Your password has been reset successfully.',
+                [
+                  { 
+                    text: 'Sign In', 
+                    onPress: () => {
+                      setScreen('role-select');
+                      setForgotEmail('');
+                      setNewPassword('');
+                      setConfirmPassword('');
+                    }
+                  }
+                ]
+              );
+            }}
+          >
+            <Text style={styles.btnText}>Update Password</Text>
+          </TouchableOpacity>
+        </KeyboardAvoidingView>
+      </DismissKeyboard>
+    </ScreenBackground>
+  );
+  const Home = () => (
+    <ScreenBackground>
+      <View style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.scrollPadding}>
+          <View style={styles.userBox}>
+            <Text style={styles.userText}>
+              Logged in: <Text style={{color:'#2ecc71', fontWeight:'bold'}}>
+                {userRole?.name || 'User'}
+              </Text>
+            </Text>
+            <Text style={styles.userRole}>
+              {userRole?.role}
+            </Text>
+          </View>
+          <Text style={styles.greeting}>Good morning!</Text>
+          <View style={styles.row3}>
+            <View style={[styles.card, styles.cardGreen]}>
+              <Text style={styles.cardNum}>7</Text>
+              <Text style={styles.cardLabel}>0–2 days</Text>
+            </View>
+            <View style={[styles.card, styles.cardGreen]}>
+              <Text style={styles.cardNum}>14</Text>
+              <Text style={styles.cardLabel}>3–7 days</Text>
+            </View>
+            <View style={[styles.card, styles.cardGreen]}>
+              <Text style={styles.cardNum}>32</Text>
+              <Text style={styles.cardLabel}>7+ days</Text>
+            </View>
+          </View>
+          <TouchableOpacity style={styles.bigBtn} onPress={() => setScreen('scan')}>
+            <Text style={styles.bigBtnText}> Start Scanning </Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.bigBtnOutline} onPress={() => setScreen('tasks')}>
+            <Text style={styles.bigBtnTextOutline}> View Today's Tasks</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.bigBtnOutline} onPress={() => setScreen('reports')}>
+            <Text style={styles.bigBtnTextOutline}> Check Sync & Reports</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.logoutBtn} onPress={() => {
+            setUserRole(null);
+            setScreen('welcome');
+          }}>
+            <Text style={styles.logoutText}>Log Out</Text>
+          </TouchableOpacity>
+        </ScrollView>
+        <BottomNav active="home" setScreen={setScreen} />
+      </View>
+    </ScreenBackground>
+  );
+
+  // ✅ SCAN SCREEN — KEYBOARD FIX APPLIED
+  const Scan = () => {
+    const saveScan = () => {
+      if (!scannedData) return;
+      setSavedScans(prev => [{...scannedData, time: new Date().toLocaleString()}, ...prev]);
+      Alert.alert('Saved!');
+      setScannedData(null);
+      setManualBarcode('');
+    };
+    
+    return (
+      <ScreenBackground>
+        <View style={styles.screen}>
+          {/* Catch taps so keyboard stays open */}
+          <TouchableOpacity 
+            style={{flex: 1}} 
+            activeOpacity={1}
+            onPress={() => {}}
+          >
+            <TouchableOpacity style={styles.backBtn} onPress={() => setScreen('home')}>
+              <Text style={styles.backText}>← Back</Text>
+            </TouchableOpacity>
+            
+            <ScrollView 
+              contentContainerStyle={styles.scrollPadding}
+              keyboardShouldPersistTaps="always"
+            >
+              <View style={{height: 90}} />
+              
+              <Text style={styles.screenTitle}> Smart Scan</Text>
+              
+              {!scannedData ? (
+                <>
+                  <Text style={styles.label}>Enter Barcode</Text>
+                  <TextInput
+                    style={styles.input}
+                    placeholder="e.g. 6001234567890"
+                    placeholderTextColor="#777"
+                    value={manualBarcode}
+                    onChangeText={setManualBarcode}
+                    keyboardType="numeric"
+                    blurOnSubmit={false}
+                    showSoftInputOnFocus={true}
+                  />
+                  <TouchableOpacity 
+                    style={[styles.btnGreen, !manualBarcode && styles.btnDisabled]}
+                    onPress={() => {
+                      if (!manualBarcode) return;
+                      setScannedData({
+                        barcode: manualBarcode,
+                        name: manualBarcode === '6001234567890' ? 'Clover Full Cream Milk' : `Product ${manualBarcode}`,
+                        expiry: '14/10/2026',
+                        daysLeft: 5,
+                      });
+                    }}
+                  >
+                    <Text style={styles.btnText}>Look Up Product</Text>
+                  </TouchableOpacity>
+                </>
+              ) : (
+                <View style={styles.productCard}>
+                  <Text style={styles.prodName}>{scannedData.name}</Text>
+                  <Text style={styles.prodInfo}>Barcode: {scannedData.barcode}</Text>
+                  <Text style={styles.prodInfo}>Expiry: {scannedData.expiry}</Text>
+                  <Text style={styles.prodInfo}>Days Left: {scannedData.daysLeft}</Text>
+                  <View style={{flexDirection:'row', gap:10, marginTop:20}}>
+                    <TouchableOpacity 
+                      style={[styles.btnGreen, {backgroundColor:'#666'}]}
+                      onPress={() => {setScannedData(null); setManualBarcode('');}}
+                    >
+                      <Text style={styles.btnText}>Scan Again</Text>
+                    </TouchableOpacity>
+                    <TouchableOpacity style={styles.btnGreen} onPress={saveScan}>
+                      <Text style={styles.btnText}>Save</Text>
+                    </TouchableOpacity>
+                  </View>
+                </View>
+              )}
+            </ScrollView>
+            <BottomNav active="scan" setScreen={setScreen} />
+          </TouchableOpacity>
+        </View>
+      </ScreenBackground>
+    );
+  };
+
+  const Tasks = () => (
+    <ScreenBackground>
+      <View style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.scrollPadding}>
+          <Text style={styles.screenTitle}>📋 Today's Tasks</Text>
+          {tasks.map(t => (
+            <View key={t.id} style={[styles.taskItem, t.done && styles.taskDone]}>
+              <View style={[styles.taskDot, {backgroundColor: t.color}]} />
+              <View style={{flex:1}}>
+                <Text style={[styles.taskName, t.done && {textDecorationLine:'line-through'}]}>
+                  {t.aisle}
+                </Text>
+                <Text style={styles.taskQty}>{t.qty}</Text>
+                {!t.done && (
+                  <TouchableOpacity 
+                    style={styles.markDoneBtn}
+                    onPress={() => setTasks(prev => prev.map(x => 
+                      x.id === t.id ? {...x, done:true} : x
+                    ))}
+                  >
+                    <Text style={styles.markDoneText}>✓ {t.action}</Text>
+                  </TouchableOpacity>
+                )}
+                {t.done && <Text style={styles.doneText}>✅ Completed</Text>}
+              </View>
+            </View>
+          ))}
+        </ScrollView>
+        <BottomNav active="tasks" setScreen={setScreen} />
+      </View>
+    </ScreenBackground>
+  );
+  const Reports = () => (
+    <ScreenBackground>
+      <View style={styles.screen}>
+        <ScrollView contentContainerStyle={styles.scrollPadding}>
+          <Text style={styles.screenTitle}>📊 Reports</Text>
+          <Text style={styles.sectionTitle}>Saved Scans: {savedScans.length}</Text>
+          {savedScans.length === 0 ? (
+            <Text style={styles.emptyText}>No scans saved yet.</Text>
+          ) : (
+            savedScans.map((s, i) => (
+              <View key={i} style={styles.savedItem}>
+                <Text style={styles.savedName}>{s.name}</Text>
+                <Text style={styles.savedTime}>{s.time}</Text>
+              </View>
+            ))
+          )}
+          <View style={styles.toggleRow}>
+            <Text style={styles.toggleLabel}>Auto-sync on Wi-Fi</Text>
+            <Switch value={autoSync} onValueChange={setAutoSync} color="#2ecc71" />
+          </View>
+          <TouchableOpacity style={styles.btnGreen} onPress={() => Alert.alert('✅ Synced!')}>
+            <Text style={styles.btnText}>Sync Now</Text>
+          </TouchableOpacity>
+        </ScrollView>
+        <BottomNav active="reports" setScreen={setScreen} />
+      </View>
+    </ScreenBackground>
+  );
+  const BottomNav = ({active, setScreen}) => (
+    <View style={styles.navBar}>
+      {[
+        {id:'home', label:'Home', icon:'🏠'},
+        {id:'scan', label:'Scan', icon:'📷'},
+        {id:'tasks', label:'Tasks', icon:'📋'},
+        {id:'reports', label:'Reports', icon:'📊'},
+      ].map(item => (
+        <TouchableOpacity 
+          key={item.id} 
+          style={styles.navItem} 
+          onPress={() => setScreen(item.id)}
+        >
+          <Text style={{fontSize:18}}>{item.icon}</Text>
+          <Text style={active === item.id ? styles.navActive : styles.navLabel}>
+            {item.label}
+          </Text>
+        </TouchableOpacity>
+      ))}
+    </View>
+  );
+  return (
+    <View style={styles.app}>
+      {screen === 'welcome' && <WelcomeScreen />}
+      {screen === 'role-select' && <RoleSelectScreen />}
+      {screen === 'signin-form' && <SignInForm />}
+      {screen === 'forgot-password' && <ForgotPasswordScreen />}
+      {screen === 'reset-password' && <ResetPasswordScreen />}
+      {screen === 'home' && <Home />}
+      {screen === 'scan' && <Scan />}
+      {screen === 'tasks' && <Tasks />}
+      {screen === 'reports' && <Reports />}
+    </View>
+  );
+}
+const styles = StyleSheet.create({
+  app: {
+    flex: 1,
+  },
+  fullScreen: {
+    flex: 1,
+  },
+  bgImage: {
+    flex: 1,
+  },
+  bgOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(10, 10, 10, 0.75)',
+  },
+  centered: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 30,
+  },
+  screen: {
+    flex: 1,
+  },
+  scrollPadding: {
+    padding: 20,
+    paddingTop: 0,
+    paddingBottom: 100,
+  },
+  welcomeOverlay: {
+    flex: 1,
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 30,
+  },
+  welcomeContent: {
+    width: '100%',
+    alignItems: 'center',
+    flex: 1,
+    paddingTop: 80,
+  },
+  welcomeTitle: {
+    fontSize: 42,
+    fontWeight: 'bold',
+    color: '#fff',
+  },
+  welcomeSubtitle: {
+    fontSize: 18,
+    color: '#ddd',
+    marginTop: 10,
+  },
+  startButton: {
+    backgroundColor: '#2ecc71',
+    borderRadius: 8,
+    paddingVertical: 10,
+    paddingHorizontal: 40,
+    alignItems: 'center',
+    marginBottom: 60,
+  },
+  startButtonText: {
+    color: '#fff',
+    fontSize: 15,
+    fontWeight: '500',
+  },
+  logo: {
+    fontSize: 32,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  tagline: {
+    fontSize: 20,
+    color: '#aaa',
+    marginBottom: 30,
+  },
+  roleButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    backgroundColor: '#222',
+    borderRadius: 10,
+    padding: 15,
+    width: '100%',
+    marginBottom: 12,
+    borderWidth: 1,
+    borderColor: '#333',
+  },
+  roleIcon: {
+    fontSize: 20,
+    marginRight: 12,
+  },
+  roleLabel: {
+    flex: 1,
+    color: '#fff',
+    fontSize: 16,
+  },
+  arrow: {
+    color: '#2ecc71',
+    fontSize: 18,
+  },
+  footer: {
+    color: '#777',
+    marginTop: 30,
+  },
+  backBtn: {
+    position: 'absolute',
+    top: 50,
+    left: 20,
+    zIndex: 10,
+  },
+  backText: {
+    color: '#2ecc71',
+    fontSize: 16,
+  },
+  formTitle: {
+    fontSize: 26,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 5,
+    marginTop: 60,
+  },
+  subRoleTitle: {
+    fontSize: 16,
+    color: '#2ecc71',
+    marginBottom: 30,
+  },
+  instructions: {
+    color: '#aaa',
+    textAlign: 'center',
+    marginBottom: 25,
+  },
+  inputLabel: {
+    alignSelf: 'flex-start',
+    color: '#aaa',
+    marginBottom: 8,
+  },
+  input: {
+    backgroundColor: '#222',
+    borderWidth: 1,
+    borderColor: '#444',
+    borderRadius: 10,
+    padding: 14,
+    color: '#fff',
+    width: '100%',
+    marginBottom: 20,
+  },
+  passwordWrapper: {
+    width: '100%',
+    flexDirection: 'row',
+    alignItems: 'center',
+    position: 'relative',
+  },
+  eyeBtn: {
+    position: 'absolute',
+    right: 15,
+    top: 12,
+  },
+  eyeText: {
+    fontSize: 18,
+  },
+  forgotLink: {
+    alignSelf: 'flex-end',
+    marginBottom: 25,
+  },
+  forgotText: {
+    color: '#2ecc71',
+    fontSize: 14,
+  },
+  btnGreen: {
+    backgroundColor: '#2ecc71',
+    borderRadius: 12,
+    paddingVertical: 15,
+    width: '100%',
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  btnDisabled: {
+    opacity: 0.5,
+  },
+  btnText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  userBox: {
+    backgroundColor: '#222',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 20,
+  },
+  userText: {
+    color: '#fff',
+  },
+  userRole: {
+    color: '#888',
+    fontSize: 12,
+    marginTop: 5,
+  },
+  greeting: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+  },
+  row3: {
+    flexDirection: 'row',
+    gap: 10,
+    marginBottom: 30,
+  },
+  card: {
+    flex: 1,
+    borderRadius: 10,
+    padding: 15,
+    alignItems: 'center',
+  },
+  cardRed: { backgroundColor: '#c0392b' },
+  cardYellow: { backgroundColor: '#d68910' },
+  cardGreen: { backgroundColor: '#27ae60' },
+  cardNum: { color: '#fff', fontSize: 22, fontWeight: 'bold' },
+  cardLabel: { color: '#fff', fontSize: 10, marginTop: 3 },
+  bigBtn: {
+    backgroundColor: '#2ecc71',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  bigBtnOutline: {
+    borderWidth: 2,
+    borderColor: '#2ecc71',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginBottom: 12,
+  },
+  bigBtnText: { color: '#fff', fontSize: 16, fontWeight: '600' },
+  bigBtnTextOutline: { color: '#2ecc71', fontSize: 16, fontWeight: '600' },
+  logoutBtn: {
+    backgroundColor: '#444',
+    borderRadius: 12,
+    paddingVertical: 15,
+    alignItems: 'center',
+    marginTop: 20,
+  },
+  logoutText: { color: '#ff6b6b', fontSize: 16, fontWeight: '600' },
+  screenTitle: {
+    fontSize: 24,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 20,
+  },
+  label: {
+    color: '#aaa',
+    marginBottom: 8,
+  },
+  productCard: {
+    backgroundColor: '#222',
+    borderRadius: 15,
+    padding: 20,
+    marginTop: 10,
+  },
+  prodName: {
+    fontSize: 20,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 10,
+  },
+  prodInfo: {
+    color: '#ccc',
+    marginBottom: 5,
+  },
+  taskItem: {
+    flexDirection: 'row',
+    backgroundColor: '#222',
+    borderRadius: 10,
+    padding: 15,
+    marginBottom: 10,
+  },
+  taskDone: {
+    opacity: 0.5,
+  },
+  taskDot: {
+    width: 14,
+    height: 14,
+    borderRadius: 7,
+    marginTop: 3,
+    marginRight: 12,
+  },
+  taskName: {
+    color: '#fff',
+    fontWeight: '600',
+  },
+  taskQty: {
+    color: '#888',
+    fontSize: 12,
+    marginBottom: 8,
+  },
+  markDoneBtn: {
+    backgroundColor: '#2ecc71',
+    borderRadius: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    alignSelf: 'flex-start',
+  },
+  markDoneText: {
+    color: '#fff',
+    fontSize: 12,
+  },
+  doneText: {
+    color: '#2ecc71',
+    fontSize: 12,
+  },
+  sectionTitle: {
+    fontSize: 18,
+    fontWeight: 'bold',
+    color: '#fff',
+    marginBottom: 15,
+  },
+  emptyText: {
+    color: '#777',
+    textAlign: 'center',
+    marginVertical: 30,
+  },
+  savedItem: {
+    backgroundColor: '#222',
+    borderRadius: 8,
+    padding: 12,
+    marginBottom: 8,
+  },
+  savedName: {
+    color: '#fff',
+  },
+  savedTime: {
+    color: '#777',
+    fontSize: 11,
+    marginTop: 3,
+  },
+  toggleRow: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    backgroundColor: '#222',
+    borderRadius: 10,
+    padding: 15,
+    marginTop: 20,
+    marginBottom: 20,
+  },
+  toggleLabel: {
+    color: '#fff',
+  },
+  navBar: {
+    flexDirection: 'row',
+    borderTopWidth: 1,
+    borderTopColor: '#333',
+    paddingTop: 10,
+    paddingBottom: 25,
+    backgroundColor: '#111',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
+  },
+  navItem: {s
+    flex: 1,
+    alignItems: 'center',
+  },
+  navLabel: {
+    color: '#777',
+    fontSize: 11,
+    marginTop: 4,
+  },
+  navActive: {
+    color: '#2ecc71',
+    fontSize: 11,
+    fontWeight: 'bold',
+    marginTop: 4,
+  },
+});
